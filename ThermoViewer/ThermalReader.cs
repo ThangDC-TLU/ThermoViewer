@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Globalization;
 using System.Linq;
+using System.Text.Json;
 
 namespace ThermoViewer
 {
@@ -16,122 +17,172 @@ namespace ThermoViewer
             _exifToolPath = customExifToolPath;
         }
 
+        /// <summary>
+        /// Lấy toàn bộ metadata dạng text (để debug, xem thông tin).
+        /// </summary>
         public string GetFullMetadata(string imagePath)
         {
             return ExecuteExifTool($"-a -u -g1 -S \"{imagePath}\"");
         }
 
+        /// <summary>
+        /// Đọc ThermalData nhị phân và nội suy thành ma trận nhiệt độ °C.
+        /// </summary>
         public double[,] GetThermalMatrix(string imagePath, int width = 640, int height = 512)
         {
             // 1. Lấy dải nhiệt độ thực tế từ Metadata
             var range = GetDynamicRange(imagePath);
             double realMin = range.Min;
             double realMax = range.Max;
+            double originMin = range.OriginMin;
+            double originMax = range.OriginMax;
 
-            // Debug giá trị trích xuất được
-            System.Diagnostics.Debug.WriteLine($"[DEBUG] Metadata Range: Min={realMin}, Max={realMax}");
+            Debug.WriteLine($"[DEBUG] Metadata Range: Min={realMin}, Max={realMax}, OriginMin={originMin}, OriginMax={originMax}");
 
-            // 2. Trích xuất file nhị phân thô
+            // 2. Trích xuất file nhị phân thô từ ThermalData
             string binPath = Path.ChangeExtension(imagePath, ".bin");
             ExecuteExifTool($"-ThermalData -b -w! .bin \"{imagePath}\"");
 
             if (!File.Exists(binPath))
             {
-                System.Diagnostics.Debug.WriteLine("LỖI: Không tạo được file .bin");
+                Debug.WriteLine("LỖI: Không tạo được file .bin");
                 return null;
             }
 
             double[,] matrix = new double[height, width];
+
             try
             {
                 byte[] rawBytes = File.ReadAllBytes(binPath);
-                if (File.Exists(binPath)) File.Delete(binPath); // Xóa file tạm ngay sau khi đọc
 
-                if (rawBytes.Length < width * height * 2) return null;
+                // Xóa file tạm sau khi đọc (cố gắng, không bắt buộc)
+                try { File.Delete(binPath); } catch { }
 
-                using (BinaryReader reader = new BinaryReader(new MemoryStream(rawBytes)))
+                if (rawBytes.Length < width * height * 2)
+                {
+                    Debug.WriteLine($"[DEBUG] rawBytes.Length = {rawBytes.Length}, nhỏ hơn {width * height * 2}");
+                    return null;
+                }
+
+                using (var reader = new BinaryReader(new MemoryStream(rawBytes)))
                 {
                     ushort[] allPixels = new ushort[width * height];
                     for (int i = 0; i < allPixels.Length; i++)
                     {
-                        // Đọc 2 bytes (Little-endian) cho mỗi pixel
+                        // 2 byte / pixel (Little-endian)
                         allPixels[i] = reader.ReadUInt16();
                     }
 
-                    // Tìm giá trị thô (Raw) Min/Max trong mảng
+                    // Tìm dải raw
                     ushort rawMin = allPixels.Min();
                     ushort rawMax = allPixels.Max();
                     double rawRange = (rawMax - rawMin == 0) ? 1.0 : (rawMax - rawMin);
 
-                    System.Diagnostics.Debug.WriteLine($"[DEBUG] Raw Range: {rawMin} to {rawMax}");
+                    Debug.WriteLine($"[DEBUG] Raw Range: {rawMin} to {rawMax}");
 
-                    // 3. Nội suy tuyến tính để đưa về độ C
-                    for (int i = 0; i < height; i++)
+                    // 3. Nội suy tuyến tính raw → °C
+                    for (int y = 0; y < height; y++)
                     {
-                        for (int j = 0; j < width; j++)
+                        for (int x = 0; x < width; x++)
                         {
-                            ushort currentRaw = allPixels[i * width + j];
-                            // Công thức ánh xạ từ dải Raw sang dải Nhiệt độ thực tế
-                            matrix[i, j] = realMin + (double)(currentRaw - rawMin) / rawRange * (realMax - realMin);
+                            ushort currentRaw = allPixels[y * width + x];
+                            matrix[y, x] = realMin + (double)(currentRaw - rawMin) / rawRange * (realMax - realMin);
                         }
                     }
                 }
+
                 return matrix;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Lỗi nội suy: " + ex.Message);
+                Debug.WriteLine("Lỗi nội suy: " + ex.Message);
                 return null;
             }
         }
 
-        private (double Max, double Min) GetDynamicRange(string imagePath)
+        /// <summary>
+        /// Đọc UserComment (JSON) và trả về dải nhiệt độ:
+        /// temperature_range.high / low / originMax / originMin.
+        /// </summary>
+        public (double Max, double Min, double OriginMax, double OriginMin) GetDynamicRange(string imagePath)
         {
-            // Sử dụng -j để lấy JSON giúp parse giá trị an toàn hơn
             string metadata = ExecuteExifTool($"-UserComment -j \"{imagePath}\"");
 
-            // Giá trị mặc định nếu ảnh DJI ZH20T mẫu
-            double max = 60;
-            double min = 23;
+            double defaultMax = 60;
+            double defaultMin = 23;
+            double defaultOriginMax = 60;
+            double defaultOriginMin = 23;
 
-            if (string.IsNullOrEmpty(metadata)) return (max, min);
+            if (string.IsNullOrWhiteSpace(metadata))
+                return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
 
             try
             {
-                // Parse giá trị từ chuỗi JSON
-                double dMax = ParseValue(metadata, "\"high\":");
-                double dMin = ParseValue(metadata, "\"low\":");
+                // JSON ngoài cùng: mảng 1 phần tử
+                using (JsonDocument doc = JsonDocument.Parse(metadata))
+                {
+                    JsonElement root = doc.RootElement;
 
-                // Nếu parse thành công (khác 0) thì trả về giá trị đó
-                return (dMax != 0 && dMin != 0) ? (dMax, dMin) : (max, min);
+                    if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() == 0)
+                        return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+
+                    JsonElement obj = root[0];
+
+                    // Trường UserComment (chuỗi JSON lồng bên trong)
+                    JsonElement userCommentProp;
+                    if (!obj.TryGetProperty("UserComment", out userCommentProp))
+                        return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+
+                    string userCommentStr = userCommentProp.GetString();
+                    if (string.IsNullOrWhiteSpace(userCommentStr))
+                        return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+
+                    // Parse JSON bên trong UserComment
+                    using (JsonDocument ucDoc = JsonDocument.Parse(userCommentStr))
+                    {
+                        JsonElement ucRoot = ucDoc.RootElement;
+
+                        JsonElement tempRange;
+                        if (!ucRoot.TryGetProperty("temperature_range", out tempRange))
+                            return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+
+                        double max = TryGetDouble(tempRange, "high", defaultMax);
+                        double min = TryGetDouble(tempRange, "low", defaultMin);
+                        double originMax = TryGetDouble(tempRange, "originMax", defaultOriginMax);
+                        double originMin = TryGetDouble(tempRange, "originMin", defaultOriginMin);
+
+                        Debug.WriteLine(
+                            $"[DEBUG] Parsed temperature_range: high={max}, low={min}, originMax={originMax}, originMin={originMin}");
+
+                        return (max, min, originMax, originMin);
+                    }
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return (max, min);
+                Debug.WriteLine("Lỗi parse JSON UserComment: " + ex.Message);
+                return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
             }
         }
 
-        private double ParseValue(string text, string key)
+        /// <summary>
+        /// Helper: lấy double từ JsonElement, nếu lỗi trả về defaultValue.
+        /// </summary>
+        private double TryGetDouble(JsonElement obj, string propertyName, double defaultValue)
         {
-            int start = text.IndexOf(key);
-            if (start == -1) return 0;
-
-            start += key.Length;
-
-            // SỬA LỖI: Thay FindAny bằng IndexOfAny để tương thích .NET Framework
-            int end = text.IndexOfAny(new char[] { ',', '}', ' ' }, start);
-            if (end == -1) return 0;
-
-            string val = text.Substring(start, end - start).Replace("\"", "").Trim();
-
-            // Chuyển đổi sang double, đảm bảo dùng InvariantCulture để nhận diện dấu chấm thập phân
-            if (double.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+            JsonElement prop;
+            if (obj.TryGetProperty(propertyName, out prop))
             {
-                return result;
+                double value;
+                if (prop.TryGetDouble(out value))
+                    return value;
             }
-            return 0;
+            return defaultValue;
         }
 
+        /// <summary>
+        /// Thực thi exiftool và trả về stdout.
+        /// </summary>
         private string ExecuteExifTool(string arguments)
         {
             if (!File.Exists(_exifToolPath))
@@ -152,6 +203,7 @@ namespace ThermoViewer
                 using (Process process = Process.Start(startInfo))
                 {
                     if (process == null) return null;
+
                     using (StreamReader reader = process.StandardOutput)
                     {
                         string result = reader.ReadToEnd();
