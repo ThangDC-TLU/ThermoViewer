@@ -71,8 +71,6 @@ namespace ThermoViewer
                 var range = reader.GetDynamicRange(filePath);
                 double realMin = range.Min;
                 double realMax = range.Max;
-                double originMin = range.OriginMin;
-                double originMax = range.OriginMax;
 
                 // Reset zoom & ROI
                 zoomFactor = 1.0f;
@@ -96,13 +94,12 @@ namespace ThermoViewer
                 // Cập nhật thông tin ảnh
                 lblFilePath.Text = System.IO.Path.GetFileName(filePath);
                 lblResolution.Text = $"{thermalImage.Width} x {thermalImage.Height}";
-                lblCamera.Text = "DJI ZH20T";
+        
 
                 // Cập nhật thông tin nhiệt độ tổng
                 lblRealMin.Text = $"{realMin:F2} °C";
                 lblRealMax.Text = $"{realMax:F2} °C";
-                lblOriginMin.Text = $"{originMin:F2} °C";
-                lblOriginMax.Text = $"{originMax:F2} °C";
+          
 
                 // Reset nhiệt độ tại chuột & ROI
                 lblCursorTemp.Text = "- °C";

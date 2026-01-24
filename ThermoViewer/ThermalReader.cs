@@ -34,10 +34,9 @@ namespace ThermoViewer
             var range = GetDynamicRange(imagePath);
             double realMin = range.Min;
             double realMax = range.Max;
-            double originMin = range.OriginMin;
-            double originMax = range.OriginMax;
+    
 
-            Debug.WriteLine($"[DEBUG] Metadata Range: Min={realMin}, Max={realMax}, OriginMin={originMin}, OriginMax={originMax}");
+            Debug.WriteLine($"[DEBUG] Metadata Range: Min={realMin}, Max={realMax}");
 
             // 2. Trích xuất file nhị phân thô từ ThermalData
             string binPath = Path.ChangeExtension(imagePath, ".bin");
@@ -102,19 +101,17 @@ namespace ThermoViewer
 
         /// <summary>
         /// Đọc UserComment (JSON) và trả về dải nhiệt độ:
-        /// temperature_range.high / low / originMax / originMin.
+        /// temperature_range.high / low.
         /// </summary>
-        public (double Max, double Min, double OriginMax, double OriginMin) GetDynamicRange(string imagePath)
+        public (double Max, double Min) GetDynamicRange(string imagePath)
         {
             string metadata = ExecuteExifTool($"-UserComment -j \"{imagePath}\"");
 
-            double defaultMax = 60;
-            double defaultMin = 23;
-            double defaultOriginMax = 60;
-            double defaultOriginMin = 23;
+            double defaultMax = 0;
+            double defaultMin = 0;
 
             if (string.IsNullOrWhiteSpace(metadata))
-                return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+                return (defaultMax, defaultMin);
 
             try
             {
@@ -124,18 +121,18 @@ namespace ThermoViewer
                     JsonElement root = doc.RootElement;
 
                     if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() == 0)
-                        return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+                        return (defaultMax, defaultMin);
 
                     JsonElement obj = root[0];
 
                     // Trường UserComment (chuỗi JSON lồng bên trong)
                     JsonElement userCommentProp;
                     if (!obj.TryGetProperty("UserComment", out userCommentProp))
-                        return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+                        return (defaultMax, defaultMin);
 
                     string userCommentStr = userCommentProp.GetString();
                     if (string.IsNullOrWhiteSpace(userCommentStr))
-                        return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+                        return (defaultMax, defaultMin);
 
                     // Parse JSON bên trong UserComment
                     using (JsonDocument ucDoc = JsonDocument.Parse(userCommentStr))
@@ -144,24 +141,22 @@ namespace ThermoViewer
 
                         JsonElement tempRange;
                         if (!ucRoot.TryGetProperty("temperature_range", out tempRange))
-                            return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+                            return (defaultMax, defaultMin);
 
                         double max = TryGetDouble(tempRange, "high", defaultMax);
                         double min = TryGetDouble(tempRange, "low", defaultMin);
-                        double originMax = TryGetDouble(tempRange, "originMax", defaultOriginMax);
-                        double originMin = TryGetDouble(tempRange, "originMin", defaultOriginMin);
 
                         Debug.WriteLine(
-                            $"[DEBUG] Parsed temperature_range: high={max}, low={min}, originMax={originMax}, originMin={originMin}");
+                            $"[DEBUG] Parsed temperature_range: high={max}, low={min}");
 
-                        return (max, min, originMax, originMin);
+                        return (max, min);
                     }
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Lỗi parse JSON UserComment: " + ex.Message);
-                return (defaultMax, defaultMin, defaultOriginMax, defaultOriginMin);
+                return (defaultMax, defaultMin);
             }
         }
 

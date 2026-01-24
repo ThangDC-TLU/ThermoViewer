@@ -21,16 +21,10 @@ namespace ThermoViewer
         private System.Windows.Forms.Label lblFilePath;
         private System.Windows.Forms.Label lblResolutionTitle;
         private System.Windows.Forms.Label lblResolution;
-        private System.Windows.Forms.Label lblCameraTitle;
-        private System.Windows.Forms.Label lblCamera;
         private System.Windows.Forms.Label lblRealMinTitle;
         private System.Windows.Forms.Label lblRealMin;
         private System.Windows.Forms.Label lblRealMaxTitle;
         private System.Windows.Forms.Label lblRealMax;
-        private System.Windows.Forms.Label lblOriginMinTitle;
-        private System.Windows.Forms.Label lblOriginMin;
-        private System.Windows.Forms.Label lblOriginMaxTitle;
-        private System.Windows.Forms.Label lblOriginMax;
         private System.Windows.Forms.Label lblCursorTempTitle;
         private System.Windows.Forms.Label lblCursorTemp;
         private System.Windows.Forms.Label lblRoiMinTitle;
@@ -68,10 +62,6 @@ namespace ThermoViewer
             this.lblRealMin = new System.Windows.Forms.Label();
             this.lblRealMaxTitle = new System.Windows.Forms.Label();
             this.lblRealMax = new System.Windows.Forms.Label();
-            this.lblOriginMinTitle = new System.Windows.Forms.Label();
-            this.lblOriginMin = new System.Windows.Forms.Label();
-            this.lblOriginMaxTitle = new System.Windows.Forms.Label();
-            this.lblOriginMax = new System.Windows.Forms.Label();
             this.lblCursorTempTitle = new System.Windows.Forms.Label();
             this.lblCursorTemp = new System.Windows.Forms.Label();
             this.lblRoiMinTitle = new System.Windows.Forms.Label();
@@ -85,8 +75,6 @@ namespace ThermoViewer
             this.lblFilePath = new System.Windows.Forms.Label();
             this.lblResolutionTitle = new System.Windows.Forms.Label();
             this.lblResolution = new System.Windows.Forms.Label();
-            this.lblCameraTitle = new System.Windows.Forms.Label();
-            this.lblCamera = new System.Windows.Forms.Label();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -186,10 +174,6 @@ namespace ThermoViewer
             this.grpThermalInfo.Controls.Add(this.lblRealMin);
             this.grpThermalInfo.Controls.Add(this.lblRealMaxTitle);
             this.grpThermalInfo.Controls.Add(this.lblRealMax);
-            this.grpThermalInfo.Controls.Add(this.lblOriginMinTitle);
-            this.grpThermalInfo.Controls.Add(this.lblOriginMin);
-            this.grpThermalInfo.Controls.Add(this.lblOriginMaxTitle);
-            this.grpThermalInfo.Controls.Add(this.lblOriginMax);
             this.grpThermalInfo.Controls.Add(this.lblCursorTempTitle);
             this.grpThermalInfo.Controls.Add(this.lblCursorTemp);
             this.grpThermalInfo.Controls.Add(this.lblRoiMinTitle);
@@ -243,46 +227,10 @@ namespace ThermoViewer
             this.lblRealMax.TabIndex = 3;
             this.lblRealMax.Text = "- °C";
             // 
-            // lblOriginMinTitle
-            // 
-            this.lblOriginMinTitle.AutoSize = true;
-            this.lblOriginMinTitle.Location = new System.Drawing.Point(13, 78);
-            this.lblOriginMinTitle.Name = "lblOriginMinTitle";
-            this.lblOriginMinTitle.Size = new System.Drawing.Size(83, 20);
-            this.lblOriginMinTitle.TabIndex = 4;
-            this.lblOriginMinTitle.Text = "Origin Min:";
-            // 
-            // lblOriginMin
-            // 
-            this.lblOriginMin.AutoSize = true;
-            this.lblOriginMin.Location = new System.Drawing.Point(130, 78);
-            this.lblOriginMin.Name = "lblOriginMin";
-            this.lblOriginMin.Size = new System.Drawing.Size(34, 20);
-            this.lblOriginMin.TabIndex = 5;
-            this.lblOriginMin.Text = "- °C";
-            // 
-            // lblOriginMaxTitle
-            // 
-            this.lblOriginMaxTitle.AutoSize = true;
-            this.lblOriginMaxTitle.Location = new System.Drawing.Point(13, 102);
-            this.lblOriginMaxTitle.Name = "lblOriginMaxTitle";
-            this.lblOriginMaxTitle.Size = new System.Drawing.Size(87, 20);
-            this.lblOriginMaxTitle.TabIndex = 6;
-            this.lblOriginMaxTitle.Text = "Origin Max:";
-            // 
-            // lblOriginMax
-            // 
-            this.lblOriginMax.AutoSize = true;
-            this.lblOriginMax.Location = new System.Drawing.Point(130, 102);
-            this.lblOriginMax.Name = "lblOriginMax";
-            this.lblOriginMax.Size = new System.Drawing.Size(34, 20);
-            this.lblOriginMax.TabIndex = 7;
-            this.lblOriginMax.Text = "- °C";
-            // 
             // lblCursorTempTitle
             // 
             this.lblCursorTempTitle.AutoSize = true;
-            this.lblCursorTempTitle.Location = new System.Drawing.Point(13, 150);
+            this.lblCursorTempTitle.Location = new System.Drawing.Point(13, 112);
             this.lblCursorTempTitle.Name = "lblCursorTempTitle";
             this.lblCursorTempTitle.Size = new System.Drawing.Size(137, 20);
             this.lblCursorTempTitle.TabIndex = 8;
@@ -291,7 +239,7 @@ namespace ThermoViewer
             // lblCursorTemp
             // 
             this.lblCursorTemp.AutoSize = true;
-            this.lblCursorTemp.Location = new System.Drawing.Point(156, 150);
+            this.lblCursorTemp.Location = new System.Drawing.Point(156, 112);
             this.lblCursorTemp.Name = "lblCursorTemp";
             this.lblCursorTemp.Size = new System.Drawing.Size(34, 20);
             this.lblCursorTemp.TabIndex = 9;
@@ -300,7 +248,7 @@ namespace ThermoViewer
             // lblRoiMinTitle
             // 
             this.lblRoiMinTitle.AutoSize = true;
-            this.lblRoiMinTitle.Location = new System.Drawing.Point(13, 180);
+            this.lblRoiMinTitle.Location = new System.Drawing.Point(13, 142);
             this.lblRoiMinTitle.Name = "lblRoiMinTitle";
             this.lblRoiMinTitle.Size = new System.Drawing.Size(71, 20);
             this.lblRoiMinTitle.TabIndex = 10;
@@ -309,7 +257,7 @@ namespace ThermoViewer
             // lblRoiMin
             // 
             this.lblRoiMin.AutoSize = true;
-            this.lblRoiMin.Location = new System.Drawing.Point(130, 180);
+            this.lblRoiMin.Location = new System.Drawing.Point(130, 142);
             this.lblRoiMin.Name = "lblRoiMin";
             this.lblRoiMin.Size = new System.Drawing.Size(34, 20);
             this.lblRoiMin.TabIndex = 11;
@@ -318,7 +266,7 @@ namespace ThermoViewer
             // lblRoiMaxTitle
             // 
             this.lblRoiMaxTitle.AutoSize = true;
-            this.lblRoiMaxTitle.Location = new System.Drawing.Point(13, 204);
+            this.lblRoiMaxTitle.Location = new System.Drawing.Point(13, 166);
             this.lblRoiMaxTitle.Name = "lblRoiMaxTitle";
             this.lblRoiMaxTitle.Size = new System.Drawing.Size(75, 20);
             this.lblRoiMaxTitle.TabIndex = 12;
@@ -327,7 +275,7 @@ namespace ThermoViewer
             // lblRoiMax
             // 
             this.lblRoiMax.AutoSize = true;
-            this.lblRoiMax.Location = new System.Drawing.Point(130, 204);
+            this.lblRoiMax.Location = new System.Drawing.Point(130, 166);
             this.lblRoiMax.Name = "lblRoiMax";
             this.lblRoiMax.Size = new System.Drawing.Size(34, 20);
             this.lblRoiMax.TabIndex = 13;
@@ -336,7 +284,7 @@ namespace ThermoViewer
             // lblRoiAvgTitle
             // 
             this.lblRoiAvgTitle.AutoSize = true;
-            this.lblRoiAvgTitle.Location = new System.Drawing.Point(13, 228);
+            this.lblRoiAvgTitle.Location = new System.Drawing.Point(13, 190);
             this.lblRoiAvgTitle.Name = "lblRoiAvgTitle";
             this.lblRoiAvgTitle.Size = new System.Drawing.Size(73, 20);
             this.lblRoiAvgTitle.TabIndex = 14;
@@ -345,7 +293,7 @@ namespace ThermoViewer
             // lblRoiAvg
             // 
             this.lblRoiAvg.AutoSize = true;
-            this.lblRoiAvg.Location = new System.Drawing.Point(130, 228);
+            this.lblRoiAvg.Location = new System.Drawing.Point(130, 190);
             this.lblRoiAvg.Name = "lblRoiAvg";
             this.lblRoiAvg.Size = new System.Drawing.Size(34, 20);
             this.lblRoiAvg.TabIndex = 15;
@@ -357,8 +305,6 @@ namespace ThermoViewer
             this.grpImageInfo.Controls.Add(this.lblFilePath);
             this.grpImageInfo.Controls.Add(this.lblResolutionTitle);
             this.grpImageInfo.Controls.Add(this.lblResolution);
-            this.grpImageInfo.Controls.Add(this.lblCameraTitle);
-            this.grpImageInfo.Controls.Add(this.lblCamera);
             this.grpImageInfo.Dock = System.Windows.Forms.DockStyle.Top;
             this.grpImageInfo.Location = new System.Drawing.Point(10, 0);
             this.grpImageInfo.Name = "grpImageInfo";
@@ -403,24 +349,6 @@ namespace ThermoViewer
             this.lblResolution.Size = new System.Drawing.Size(14, 20);
             this.lblResolution.TabIndex = 3;
             this.lblResolution.Text = "-";
-            // 
-            // lblCameraTitle
-            // 
-            this.lblCameraTitle.AutoSize = true;
-            this.lblCameraTitle.Location = new System.Drawing.Point(13, 92);
-            this.lblCameraTitle.Name = "lblCameraTitle";
-            this.lblCameraTitle.Size = new System.Drawing.Size(69, 20);
-            this.lblCameraTitle.TabIndex = 4;
-            this.lblCameraTitle.Text = "Camera:";
-            // 
-            // lblCamera
-            // 
-            this.lblCamera.AutoSize = true;
-            this.lblCamera.Location = new System.Drawing.Point(110, 92);
-            this.lblCamera.Name = "lblCamera";
-            this.lblCamera.Size = new System.Drawing.Size(14, 20);
-            this.lblCamera.TabIndex = 5;
-            this.lblCamera.Text = "-";
             // 
             // statusStrip1
             // 
