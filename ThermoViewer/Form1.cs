@@ -7,7 +7,7 @@ namespace ThermoViewer
     public partial class Form1 : Form
     {
         private Bitmap thermalImage;
-        private double[,] thermalData; // ma trận nhiệt độ [height, width]
+        private double[,] thermalData; // [height,width]
         private ThermalReader reader;
         private string exifPath = @"D:\ThucTap_NganGiang\Code\exiftool-13.45_64\exiftool.exe";
 
@@ -27,9 +27,16 @@ namespace ThermoViewer
         private Point panStartPoint;
         private Point autoScrollStart;
 
+        // Helpers
+        private ImageCoordinateMapper _mapper;
+        private ClusterManager _clusterManager;
+
         public Form1()
         {
             InitializeComponent();
+
+            _mapper = new ImageCoordinateMapper(() => pictureBox1, () => thermalData);
+            _clusterManager = new ClusterManager(_mapper, () => (double)numClusterThreshold.Value);
 
             // Mouse events
             pictureBox1.MouseDown += pictureBox1_MouseDown;
@@ -41,12 +48,16 @@ namespace ThermoViewer
             pictureBox1.MouseWheel += pictureBox1_MouseWheel;
             pictureBox1.MouseEnter += (s, e) => pictureBox1.Focus();
 
+            // UI events
+            chkShowClusters.CheckedChanged += chkShowClusters_CheckedChanged;
+            numClusterThreshold.ValueChanged += numClusterThreshold_ValueChanged;
+
             lblInfo.Text = "Chưa có ảnh. Nhấn \"Mở ảnh...\" để chọn ảnh nhiệt.";
             if (statusLabel != null)
                 statusLabel.Text = "Sẵn sàng.";
         }
 
-        // NÚT MỞ ẢNH
+        // ================== MỞ ẢNH ==================
         private void btnOpenImage_Click(object sender, EventArgs e)
         {
             if (openFileDialog1.ShowDialog() != DialogResult.OK)
@@ -56,34 +67,29 @@ namespace ThermoViewer
 
             try
             {
-                if (thermalImage != null)
-                    thermalImage.Dispose();
-
+                thermalImage?.Dispose();
                 thermalImage = new Bitmap(filePath);
                 pictureBox1.Image = thermalImage;
 
                 reader = new ThermalReader(exifPath);
-
-                // Lấy ma trận nhiệt độ (H20T: 640 x 512)
                 thermalData = reader.GetThermalMatrix(filePath, 640, 512);
 
-                // Lấy dải nhiệt độ
                 var range = reader.GetDynamicRange(filePath);
                 double realMin = range.Min;
                 double realMax = range.Max;
 
-                // Reset zoom & ROI
+                // Reset
                 zoomFactor = 1.0f;
                 selectionRect = Rectangle.Empty;
+                _clusterManager.Reset();
 
-                // Kích thước cơ sở lấy từ ma trận nhiệt (nếu có), để mapping chuẩn
+                // Đồng bộ size pictureBox theo thermalData
                 if (thermalData != null)
                 {
-                    int baseW = thermalData.GetLength(1); // width
-                    int baseH = thermalData.GetLength(0); // height
-
+                    int w = thermalData.GetLength(1);
+                    int h = thermalData.GetLength(0);
                     pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
-                    pictureBox1.Size = new Size(baseW, baseH);
+                    pictureBox1.Size = new Size(w, h);
                 }
                 else
                 {
@@ -91,35 +97,28 @@ namespace ThermoViewer
                     pictureBox1.Size = thermalImage.Size;
                 }
 
-                // Cập nhật thông tin ảnh
+                // Info ảnh
                 lblFilePath.Text = System.IO.Path.GetFileName(filePath);
                 lblResolution.Text = $"{thermalImage.Width} x {thermalImage.Height}";
-        
-
-                // Cập nhật thông tin nhiệt độ tổng
                 lblRealMin.Text = $"{realMin:F2} °C";
                 lblRealMax.Text = $"{realMax:F2} °C";
-          
 
-                // Reset nhiệt độ tại chuột & ROI
+                // Reset panel phải
                 lblCursorTemp.Text = "- °C";
                 lblRoiMin.Text = "- °C";
                 lblRoiMax.Text = "- °C";
                 lblRoiAvg.Text = "- °C";
 
-                if (thermalData != null)
-                    lblInfo.Text = $"Đã nạp dữ liệu nhiệt độ: {thermalData.GetLength(1)} x {thermalData.GetLength(0)}";
-                else
-                    lblInfo.Text = "Cảnh báo: Không trích xuất được dữ liệu nhiệt độ thô!";
+                lblInfo.Text = thermalData != null
+                    ? $"Đã nạp dữ liệu nhiệt độ: {thermalData.GetLength(1)} x {thermalData.GetLength(0)}"
+                    : "Cảnh báo: Không trích xuất được dữ liệu nhiệt độ thô!";
 
-                if (statusLabel != null)
-                    statusLabel.Text = "Đã mở ảnh: " + filePath;
+                statusLabel.Text = "Đã mở ảnh: " + filePath;
             }
             catch (Exception ex)
             {
                 lblInfo.Text = "Lỗi khi mở ảnh hoặc đọc dữ liệu nhiệt.";
-                if (statusLabel != null)
-                    statusLabel.Text = "Lỗi: " + ex.Message;
+                statusLabel.Text = "Lỗi: " + ex.Message;
 
                 MessageBox.Show(
                     "Không thể mở ảnh hoặc đọc dữ liệu nhiệt.\n\nChi tiết: " + ex.Message,
@@ -130,25 +129,17 @@ namespace ThermoViewer
             }
         }
 
-        // ZOOM: Ctrl + lăn chuột
+        // ================== ZOOM ==================
         private void pictureBox1_MouseWheel(object sender, MouseEventArgs e)
         {
             if (thermalImage == null) return;
-
             if ((ModifierKeys & Keys.Control) != Keys.Control)
                 return;
 
             float oldZoom = zoomFactor;
-
-            if (e.Delta > 0)
-                zoomFactor += ZoomStep;
-            else
-                zoomFactor -= ZoomStep;
-
+            zoomFactor += (e.Delta > 0 ? ZoomStep : -ZoomStep);
             zoomFactor = Math.Max(MinZoom, Math.Min(MaxZoom, zoomFactor));
-
-            if (Math.Abs(oldZoom - zoomFactor) < 0.001f)
-                return;
+            if (Math.Abs(oldZoom - zoomFactor) < 0.001f) return;
 
             ApplyZoom();
         }
@@ -157,17 +148,8 @@ namespace ThermoViewer
         {
             if (thermalImage == null) return;
 
-            int baseW, baseH;
-            if (thermalData != null)
-            {
-                baseW = thermalData.GetLength(1);
-                baseH = thermalData.GetLength(0);
-            }
-            else
-            {
-                baseW = thermalImage.Width;
-                baseH = thermalImage.Height;
-            }
+            int baseW = thermalData != null ? thermalData.GetLength(1) : thermalImage.Width;
+            int baseH = thermalData != null ? thermalData.GetLength(0) : thermalImage.Height;
 
             int newW = (int)(baseW * zoomFactor);
             int newH = (int)(baseH * zoomFactor);
@@ -179,21 +161,19 @@ namespace ThermoViewer
             lblInfo.Text = $"Zoom: {(int)(zoomFactor * 100)}%";
         }
 
-        // MOUSE DOWN
+        // ================== MOUSE DOWN ==================
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
             if (thermalImage == null) return;
 
-            // Chuột phải: pan
             if (e.Button == MouseButtons.Right)
             {
                 isPanning = true;
                 panStartPoint = e.Location;
-                autoScrollStart = panelImage.AutoScrollPosition; // giá trị âm
+                autoScrollStart = panelImage.AutoScrollPosition;
                 return;
             }
 
-            // Chuột trái: ROI / điểm
             if (e.Button == MouseButtons.Left)
             {
                 isSelecting = true;
@@ -202,9 +182,11 @@ namespace ThermoViewer
             }
         }
 
-        // MOUSE MOVE
+        // ================== MOUSE MOVE ==================
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
+            // KHÔNG hiển thị nhiệt độ tại chuột ở đây (chỉ click mới cập nhật lblCursorTemp)
+
             // Pan
             if (isPanning)
             {
@@ -213,24 +195,33 @@ namespace ThermoViewer
 
                 panelImage.AutoScrollPosition = new Point(
                     -(autoScrollStart.X + dx),
-                    -(autoScrollStart.Y + dy)
-                );
+                    -(autoScrollStart.Y + dy));
                 return;
             }
 
-            // ROI
-            if (!isSelecting) return;
+            // Đang kéo ROI
+            if (isSelecting)
+            {
+                int x = Math.Min(startPoint.X, e.X);
+                int y = Math.Min(startPoint.Y, e.Y);
+                int w = Math.Abs(startPoint.X - e.X);
+                int h = Math.Abs(startPoint.Y - e.Y);
 
-            int x = Math.Min(startPoint.X, e.X);
-            int y = Math.Min(startPoint.Y, e.Y);
-            int w = Math.Abs(startPoint.X - e.X);
-            int h = Math.Abs(startPoint.Y - e.Y);
+                selectionRect = new Rectangle(x, y, w, h);
+                pictureBox1.Invalidate();
+                return;
+            }
 
-            selectionRect = new Rectangle(x, y, w, h);
+            // HOVER TRONG CLUSTER – ưu tiên vùng nhỏ nhất chứa điểm
+            _clusterManager.HandleHover(
+                e.Location,
+                chkShowClusters.Checked,
+                lblInfo);
+
             pictureBox1.Invalidate();
         }
 
-        // MOUSE UP
+        // ================== MOUSE UP ==================
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
         {
             if (thermalImage == null || thermalData == null) return;
@@ -249,105 +240,84 @@ namespace ThermoViewer
             // CLICK 1 ĐIỂM
             if (selectionRect.Width < 5 || selectionRect.Height < 5)
             {
-                Point imgPt = ScreenToImage(e.Location);
+                Point imgPt = _mapper.ScreenToImage(e.Location);
                 double temp = thermalData[imgPt.Y, imgPt.X];
 
-                // Hiển thị trong grpThermalInfo
                 lblCursorTemp.Text = $"{temp:F2} °C";
-                lblInfo.Text = $"Điểm ({imgPt.X}, {imgPt.Y})";
+                lblInfo.Text = $"Điểm ({imgPt.X}, {imgPt.Y}): {temp:F2} °C";
 
                 selectionRect = Rectangle.Empty;
             }
-            // CHỌN VÙNG ROI
+            // CHỌN ROI
             else
             {
-                Point p1 = ScreenToImage(selectionRect.Location);
-                Point p2 = ScreenToImage(new Point(selectionRect.Right, selectionRect.Bottom));
-                CalculateThermalStats(p1, p2);
+                Point p1 = _mapper.ScreenToImage(selectionRect.Location);
+                Point p2 = _mapper.ScreenToImage(
+                    new Point(selectionRect.Right, selectionRect.Bottom));
+
+                _clusterManager.SetLastRoi(p1, p2);
+
+                var stats = _clusterManager.CalculateRoiStats(thermalData, p1, p2);
+                if (stats.HasValue)
+                {
+                    lblRoiMin.Text = $"{stats.Value.Min:F1} °C";
+                    lblRoiMax.Text = $"{stats.Value.Max:F1} °C";
+                    lblRoiAvg.Text = $"{stats.Value.Avg:F1} °C";
+                    lblInfo.Text = $"ROI: Min {stats.Value.Min:F1}°C | Max {stats.Value.Max:F1}°C | Avg {stats.Value.Avg:F1}°C";
+                }
+
+                if (chkShowClusters.Checked)
+                    _clusterManager.BuildClustersForRoi(thermalData, lblInfo);
+                else
+                    _clusterManager.ClearClusters();
             }
 
             pictureBox1.Invalidate();
         }
 
-        // VẼ KHUNG ROI
+        // ================== PAINT ==================
         private void pictureBox1_Paint(object sender, PaintEventArgs e)
         {
+            // ROI
             if (selectionRect != Rectangle.Empty)
             {
                 using (Pen pen = new Pen(Color.Lime, 2))
-                {
                     e.Graphics.DrawRectangle(pen, selectionRect);
-                }
             }
+
+            // Clusters
+            _clusterManager.DrawClusters(e.Graphics, chkShowClusters.Checked);
         }
 
-        /// <summary>
-        /// Chuyển toạ độ trong pictureBox (đã zoom) sang toạ độ ma trận nhiệt (thermalData).
-        /// Ảnh đang Stretch đầy pictureBox1 và base size lấy từ thermalData.
-        /// </summary>
-        private Point ScreenToImage(Point p)
+        // ================== CHECKBOX & NUMERIC ==================
+        private void chkShowClusters_CheckedChanged(object sender, EventArgs e)
         {
-            if (thermalData == null)
-                return Point.Empty;
-
-            int dataW = thermalData.GetLength(1); // 640
-            int dataH = thermalData.GetLength(0); // 512
-
-            int pbW = pictureBox1.ClientSize.Width;
-            int pbH = pictureBox1.ClientSize.Height;
-
-            if (pbW <= 0 || pbH <= 0)
-                return new Point(0, 0);
-
-            // pictureBox1.StretchImage, không căn giữa (ta không dùng offset),
-            // nên toạ độ tỉ lệ tuyến tính:
-            float scaleX = (float)dataW / pbW;
-            float scaleY = (float)dataH / pbH;
-
-            int imgX = (int)(p.X * scaleX);
-            int imgY = (int)(p.Y * scaleY);
-
-            imgX = Math.Max(0, Math.Min(dataW - 1, imgX));
-            imgY = Math.Max(0, Math.Min(dataH - 1, imgY));
-
-            return new Point(imgX, imgY);
-        }
-
-        // TÍNH MIN / MAX / AVG TRONG ROI
-        private void CalculateThermalStats(Point p1, Point p2)
-        {
-            if (thermalData == null) return;
-
-            double min = double.MaxValue;
-            double max = double.MinValue;
-            double sum = 0;
-            int count = 0;
-
-            int startX = Math.Min(p1.X, p2.X);
-            int endX = Math.Max(p1.X, p2.X);
-            int startY = Math.Min(p1.Y, p2.Y);
-            int endY = Math.Max(p1.Y, p2.Y);
-
-            for (int y = startY; y <= endY; y++)
+            if (!chkShowClusters.Checked)
             {
-                for (int x = startX; x <= endX; x++)
-                {
-                    double val = thermalData[y, x];
-                    if (val < min) min = val;
-                    if (val > max) max = val;
-                    sum += val;
-                    count++;
-                }
+                _clusterManager.ClearClusters();
+                pictureBox1.Invalidate();
+                lblInfo.Text = "Tắt hiển thị vùng.";
+                return;
             }
 
-            if (count == 0) return;
+            if (_clusterManager.HasLastRoi)
+            {
+                _clusterManager.BuildClustersForRoi(thermalData, lblInfo);
+                pictureBox1.Invalidate();
+            }
+            else
+            {
+                lblInfo.Text = "Hãy kéo một ROI để tạo vùng nhiệt.";
+            }
+        }
 
-            double avg = sum / count;
+        private void numClusterThreshold_ValueChanged(object sender, EventArgs e)
+        {
+            if (!chkShowClusters.Checked) return;
+            if (!_clusterManager.HasLastRoi) return;
 
-            // Hiển thị vào grpThermalInfo
-            lblRoiMin.Text = $"{min:F1} °C";
-            lblRoiMax.Text = $"{max:F1} °C";
-            lblRoiAvg.Text = $"{avg:F1} °C";
+            _clusterManager.BuildClustersForRoi(thermalData, lblInfo);
+            pictureBox1.Invalidate();
         }
     }
 }

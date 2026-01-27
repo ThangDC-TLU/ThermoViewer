@@ -36,6 +36,11 @@ namespace ThermoViewer
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
 
+        // Job2 UI
+        private System.Windows.Forms.CheckBox chkShowClusters;
+        private System.Windows.Forms.NumericUpDown numClusterThreshold;
+        private System.Windows.Forms.Label lblClusterThresholdTitle;
+
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -54,6 +59,9 @@ namespace ThermoViewer
             this.lblInfo = new System.Windows.Forms.Label();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.panelTop = new System.Windows.Forms.Panel();
+            this.numClusterThreshold = new System.Windows.Forms.NumericUpDown();
+            this.lblClusterThresholdTitle = new System.Windows.Forms.Label();
+            this.chkShowClusters = new System.Windows.Forms.CheckBox();
             this.panelMain = new System.Windows.Forms.Panel();
             this.panelImage = new System.Windows.Forms.Panel();
             this.panelRight = new System.Windows.Forms.Panel();
@@ -79,6 +87,7 @@ namespace ThermoViewer
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panelTop.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numClusterThreshold)).BeginInit();
             this.panelMain.SuspendLayout();
             this.panelImage.SuspendLayout();
             this.panelRight.SuspendLayout();
@@ -125,6 +134,9 @@ namespace ThermoViewer
             // panelTop
             // 
             this.panelTop.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
+            this.panelTop.Controls.Add(this.numClusterThreshold);
+            this.panelTop.Controls.Add(this.lblClusterThresholdTitle);
+            this.panelTop.Controls.Add(this.chkShowClusters);
             this.panelTop.Controls.Add(this.btnOpenImage);
             this.panelTop.Controls.Add(this.lblInfo);
             this.panelTop.Dock = System.Windows.Forms.DockStyle.Top;
@@ -133,6 +145,50 @@ namespace ThermoViewer
             this.panelTop.Padding = new System.Windows.Forms.Padding(10, 10, 10, 5);
             this.panelTop.Size = new System.Drawing.Size(1214, 50);
             this.panelTop.TabIndex = 1;
+            // 
+            // numClusterThreshold
+            // 
+            this.numClusterThreshold.DecimalPlaces = 1;
+            this.numClusterThreshold.Increment = new decimal(new int[] {
+            5,
+            0,
+            0,
+            65536});
+            this.numClusterThreshold.Location = new System.Drawing.Point(873, 15);
+            this.numClusterThreshold.Maximum = new decimal(new int[] {
+            15,
+            0,
+            0,
+            0});
+            this.numClusterThreshold.Name = "numClusterThreshold";
+            this.numClusterThreshold.Size = new System.Drawing.Size(60, 26);
+            this.numClusterThreshold.TabIndex = 4;
+            this.numClusterThreshold.Value = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.numClusterThreshold.ValueChanged += new System.EventHandler(this.numClusterThreshold_ValueChanged);
+            // 
+            // lblClusterThresholdTitle
+            // 
+            this.lblClusterThresholdTitle.AutoSize = true;
+            this.lblClusterThresholdTitle.Location = new System.Drawing.Point(769, 17);
+            this.lblClusterThresholdTitle.Name = "lblClusterThresholdTitle";
+            this.lblClusterThresholdTitle.Size = new System.Drawing.Size(99, 20);
+            this.lblClusterThresholdTitle.TabIndex = 3;
+            this.lblClusterThresholdTitle.Text = "Ngưỡng (°C):";
+            // 
+            // chkShowClusters
+            // 
+            this.chkShowClusters.AutoSize = true;
+            this.chkShowClusters.Location = new System.Drawing.Point(581, 16);
+            this.chkShowClusters.Name = "chkShowClusters";
+            this.chkShowClusters.Size = new System.Drawing.Size(147, 24);
+            this.chkShowClusters.TabIndex = 2;
+            this.chkShowClusters.Text = "Bật hiển thị vùng";
+            this.chkShowClusters.UseVisualStyleBackColor = true;
+            this.chkShowClusters.CheckedChanged += new System.EventHandler(this.chkShowClusters_CheckedChanged);
             // 
             // panelMain
             // 
@@ -381,6 +437,7 @@ namespace ThermoViewer
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panelTop.ResumeLayout(false);
             this.panelTop.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numClusterThreshold)).EndInit();
             this.panelMain.ResumeLayout(false);
             this.panelImage.ResumeLayout(false);
             this.panelRight.ResumeLayout(false);
