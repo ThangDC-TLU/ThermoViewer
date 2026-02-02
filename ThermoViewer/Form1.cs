@@ -90,6 +90,7 @@ namespace ThermoViewer
                     int h = thermalData.GetLength(0);
                     pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
                     pictureBox1.Size = new Size(w, h);
+                    reader.ExportRawToText(filePath, w, h);
                 }
                 else
                 {
@@ -185,8 +186,6 @@ namespace ThermoViewer
         // ================== MOUSE MOVE ==================
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
-            // KHÔNG hiển thị nhiệt độ tại chuột ở đây (chỉ click mới cập nhật lblCursorTemp)
-
             // Pan
             if (isPanning)
             {

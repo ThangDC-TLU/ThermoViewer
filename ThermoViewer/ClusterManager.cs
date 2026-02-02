@@ -57,6 +57,9 @@ namespace ThermoViewer
             public double Min, Max, Avg;
         }
 
+        /// <summary>
+        /// Tính toán thông tin trong vùng ROI
+        /// </summary>
         public RoiStats? CalculateRoiStats(double[,] data, Point p1, Point p2)
         {
             if (data == null) return null;
@@ -91,6 +94,9 @@ namespace ThermoViewer
             };
         }
 
+        /// <summary>
+        /// Phân cụm các điểm trong ma trận nhiệt thành nhiều vùng nhiệt theo ngưỡng nhiệt độ
+        /// </summary>
         public void BuildClustersForRoi(double[,] data, Label infoLabel)
         {
             _clusters.Clear();
@@ -251,7 +257,6 @@ namespace ThermoViewer
 
         /// <summary>
         /// Hover: ƯU TIÊN cluster có diện tích NHỎ NHẤT trong tất cả vùng chứa điểm.
-        /// Không thay đổi lblCursorTemp, chỉ highlight và cập nhật lblInfo.
         /// </summary>
         public void HandleHover(Point screenPoint,
                                 bool showClusters,
@@ -288,7 +293,9 @@ namespace ThermoViewer
                 if (bestIdx >= 0 && infoLabel != null)
                 {
                     var c = _clusters[bestIdx];
-                    infoLabel.Text = $"Vùng {bestIdx + 1}: Nhiệt độ trung bình: {c.MeanTemp:F1}°C ";
+                    infoLabel.Text =
+                                $"Vùng {bestIdx + 1}: Nhiệt độ trung bình: {c.MeanTemp:F1}°C " +
+                                $"(Min: {c.MinTemp:F2}°C, Max: {c.MaxTemp:F2}°C)";
                 }
             }
         }

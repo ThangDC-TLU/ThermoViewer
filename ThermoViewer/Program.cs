@@ -36,7 +36,7 @@ namespace ThermoViewer
         static void Main()
         {
             string exifPath = @"D:\ThucTap_NganGiang\Code\exiftool-13.45_64\exiftool.exe";
-            string imagePath = @"D:\ThucTap_NganGiang\Code\anhnhiet H20T\H20T anhnhiet.JPG";
+            string imagePath = @"D:\ThucTap_NganGiang\Code\Data\DJI_20231026125429_0025_T.JPG";
 
             ThermalReader reader = new ThermalReader(exifPath);
 

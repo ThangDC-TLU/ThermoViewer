@@ -41,6 +41,19 @@ namespace ThermoViewer
         private System.Windows.Forms.NumericUpDown numClusterThreshold;
         private System.Windows.Forms.Label lblClusterThresholdTitle;
 
+        // ====== Thông số môi trường ======
+        private System.Windows.Forms.GroupBox grpEnvInfo;
+        private System.Windows.Forms.Label lblDistanceTitle;
+        private System.Windows.Forms.Label lblDistance;
+        private System.Windows.Forms.Label lblHumidityTitle;
+        private System.Windows.Forms.Label lblHumidity;
+        private System.Windows.Forms.Label lblEmissivityTitle;
+        private System.Windows.Forms.Label lblEmissivity;
+        private System.Windows.Forms.Label lblReflectedTempTitle;
+        private System.Windows.Forms.Label lblReflectedTemp;
+        private System.Windows.Forms.Label lblAmbientTempTitle;
+        private System.Windows.Forms.Label lblAmbientTemp;
+
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -65,6 +78,17 @@ namespace ThermoViewer
             this.panelMain = new System.Windows.Forms.Panel();
             this.panelImage = new System.Windows.Forms.Panel();
             this.panelRight = new System.Windows.Forms.Panel();
+            this.grpEnvInfo = new System.Windows.Forms.GroupBox();
+            this.lblAmbientTempTitle = new System.Windows.Forms.Label();
+            this.lblAmbientTemp = new System.Windows.Forms.Label();
+            this.lblReflectedTempTitle = new System.Windows.Forms.Label();
+            this.lblReflectedTemp = new System.Windows.Forms.Label();
+            this.lblEmissivityTitle = new System.Windows.Forms.Label();
+            this.lblEmissivity = new System.Windows.Forms.Label();
+            this.lblHumidityTitle = new System.Windows.Forms.Label();
+            this.lblHumidity = new System.Windows.Forms.Label();
+            this.lblDistanceTitle = new System.Windows.Forms.Label();
+            this.lblDistance = new System.Windows.Forms.Label();
             this.grpThermalInfo = new System.Windows.Forms.GroupBox();
             this.lblRealMinTitle = new System.Windows.Forms.Label();
             this.lblRealMin = new System.Windows.Forms.Label();
@@ -91,6 +115,7 @@ namespace ThermoViewer
             this.panelMain.SuspendLayout();
             this.panelImage.SuspendLayout();
             this.panelRight.SuspendLayout();
+            this.grpEnvInfo.SuspendLayout();
             this.grpThermalInfo.SuspendLayout();
             this.grpImageInfo.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -154,7 +179,7 @@ namespace ThermoViewer
             0,
             0,
             65536});
-            this.numClusterThreshold.Location = new System.Drawing.Point(873, 15);
+            this.numClusterThreshold.Location = new System.Drawing.Point(985, 15);
             this.numClusterThreshold.Maximum = new decimal(new int[] {
             15,
             0,
@@ -173,7 +198,7 @@ namespace ThermoViewer
             // lblClusterThresholdTitle
             // 
             this.lblClusterThresholdTitle.AutoSize = true;
-            this.lblClusterThresholdTitle.Location = new System.Drawing.Point(769, 17);
+            this.lblClusterThresholdTitle.Location = new System.Drawing.Point(881, 17);
             this.lblClusterThresholdTitle.Name = "lblClusterThresholdTitle";
             this.lblClusterThresholdTitle.Size = new System.Drawing.Size(99, 20);
             this.lblClusterThresholdTitle.TabIndex = 3;
@@ -182,9 +207,9 @@ namespace ThermoViewer
             // chkShowClusters
             // 
             this.chkShowClusters.AutoSize = true;
-            this.chkShowClusters.Location = new System.Drawing.Point(581, 16);
+            this.chkShowClusters.Location = new System.Drawing.Point(723, 16);
             this.chkShowClusters.Name = "chkShowClusters";
-            this.chkShowClusters.Size = new System.Drawing.Size(147, 24);
+            this.chkShowClusters.Size = new System.Drawing.Size(153, 24);
             this.chkShowClusters.TabIndex = 2;
             this.chkShowClusters.Text = "Bật hiển thị vùng";
             this.chkShowClusters.UseVisualStyleBackColor = true;
@@ -215,6 +240,7 @@ namespace ThermoViewer
             // panelRight
             // 
             this.panelRight.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(250)))), ((int)(((byte)(250)))));
+            this.panelRight.Controls.Add(this.grpEnvInfo);
             this.panelRight.Controls.Add(this.grpThermalInfo);
             this.panelRight.Controls.Add(this.grpImageInfo);
             this.panelRight.Dock = System.Windows.Forms.DockStyle.Right;
@@ -223,6 +249,116 @@ namespace ThermoViewer
             this.panelRight.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
             this.panelRight.Size = new System.Drawing.Size(280, 551);
             this.panelRight.TabIndex = 1;
+            // 
+            // grpEnvInfo
+            // 
+            this.grpEnvInfo.Controls.Add(this.lblAmbientTempTitle);
+            this.grpEnvInfo.Controls.Add(this.lblAmbientTemp);
+            this.grpEnvInfo.Controls.Add(this.lblReflectedTempTitle);
+            this.grpEnvInfo.Controls.Add(this.lblReflectedTemp);
+            this.grpEnvInfo.Controls.Add(this.lblEmissivityTitle);
+            this.grpEnvInfo.Controls.Add(this.lblEmissivity);
+            this.grpEnvInfo.Controls.Add(this.lblHumidityTitle);
+            this.grpEnvInfo.Controls.Add(this.lblHumidity);
+            this.grpEnvInfo.Controls.Add(this.lblDistanceTitle);
+            this.grpEnvInfo.Controls.Add(this.lblDistance);
+            this.grpEnvInfo.Location = new System.Drawing.Point(10, 363);
+            this.grpEnvInfo.Name = "grpEnvInfo";
+            this.grpEnvInfo.Padding = new System.Windows.Forms.Padding(10);
+            this.grpEnvInfo.Size = new System.Drawing.Size(270, 188);
+            this.grpEnvInfo.TabIndex = 2;
+            this.grpEnvInfo.TabStop = false;
+            this.grpEnvInfo.Text = "Thông số môi trường";
+            // 
+            // lblAmbientTempTitle
+            // 
+            this.lblAmbientTempTitle.AutoSize = true;
+            this.lblAmbientTempTitle.Location = new System.Drawing.Point(13, 150);
+            this.lblAmbientTempTitle.Name = "lblAmbientTempTitle";
+            this.lblAmbientTempTitle.Size = new System.Drawing.Size(151, 20);
+            this.lblAmbientTempTitle.TabIndex = 8;
+            this.lblAmbientTempTitle.Text = "Nhiệt độ môi trường:";
+            // 
+            // lblAmbientTemp
+            // 
+            this.lblAmbientTemp.AutoSize = true;
+            this.lblAmbientTemp.Location = new System.Drawing.Point(160, 150);
+            this.lblAmbientTemp.Name = "lblAmbientTemp";
+            this.lblAmbientTemp.Size = new System.Drawing.Size(34, 20);
+            this.lblAmbientTemp.TabIndex = 9;
+            this.lblAmbientTemp.Text = "- °C";
+            // 
+            // lblReflectedTempTitle
+            // 
+            this.lblReflectedTempTitle.AutoSize = true;
+            this.lblReflectedTempTitle.Location = new System.Drawing.Point(13, 120);
+            this.lblReflectedTempTitle.Name = "lblReflectedTempTitle";
+            this.lblReflectedTempTitle.Size = new System.Drawing.Size(132, 20);
+            this.lblReflectedTempTitle.TabIndex = 6;
+            this.lblReflectedTempTitle.Text = "Nhiệt độ phản xạ:";
+            // 
+            // lblReflectedTemp
+            // 
+            this.lblReflectedTemp.AutoSize = true;
+            this.lblReflectedTemp.Location = new System.Drawing.Point(148, 120);
+            this.lblReflectedTemp.Name = "lblReflectedTemp";
+            this.lblReflectedTemp.Size = new System.Drawing.Size(34, 20);
+            this.lblReflectedTemp.TabIndex = 7;
+            this.lblReflectedTemp.Text = "- °C";
+            // 
+            // lblEmissivityTitle
+            // 
+            this.lblEmissivityTitle.AutoSize = true;
+            this.lblEmissivityTitle.Location = new System.Drawing.Point(13, 90);
+            this.lblEmissivityTitle.Name = "lblEmissivityTitle";
+            this.lblEmissivityTitle.Size = new System.Drawing.Size(90, 20);
+            this.lblEmissivityTitle.TabIndex = 4;
+            this.lblEmissivityTitle.Text = "Độ phát xạ:";
+            // 
+            // lblEmissivity
+            // 
+            this.lblEmissivity.AutoSize = true;
+            this.lblEmissivity.Location = new System.Drawing.Point(130, 90);
+            this.lblEmissivity.Name = "lblEmissivity";
+            this.lblEmissivity.Size = new System.Drawing.Size(26, 20);
+            this.lblEmissivity.TabIndex = 5;
+            this.lblEmissivity.Text = "- ε";
+            // 
+            // lblHumidityTitle
+            // 
+            this.lblHumidityTitle.AutoSize = true;
+            this.lblHumidityTitle.Location = new System.Drawing.Point(13, 60);
+            this.lblHumidityTitle.Name = "lblHumidityTitle";
+            this.lblHumidityTitle.Size = new System.Drawing.Size(60, 20);
+            this.lblHumidityTitle.TabIndex = 2;
+            this.lblHumidityTitle.Text = "Độ ẩm:";
+            // 
+            // lblHumidity
+            // 
+            this.lblHumidity.AutoSize = true;
+            this.lblHumidity.Location = new System.Drawing.Point(130, 60);
+            this.lblHumidity.Name = "lblHumidity";
+            this.lblHumidity.Size = new System.Drawing.Size(32, 20);
+            this.lblHumidity.TabIndex = 3;
+            this.lblHumidity.Text = "- %";
+            // 
+            // lblDistanceTitle
+            // 
+            this.lblDistanceTitle.AutoSize = true;
+            this.lblDistanceTitle.Location = new System.Drawing.Point(13, 30);
+            this.lblDistanceTitle.Name = "lblDistanceTitle";
+            this.lblDistanceTitle.Size = new System.Drawing.Size(106, 20);
+            this.lblDistanceTitle.TabIndex = 0;
+            this.lblDistanceTitle.Text = "Khoảng cách:";
+            // 
+            // lblDistance
+            // 
+            this.lblDistance.AutoSize = true;
+            this.lblDistance.Location = new System.Drawing.Point(130, 30);
+            this.lblDistance.Name = "lblDistance";
+            this.lblDistance.Size = new System.Drawing.Size(31, 20);
+            this.lblDistance.TabIndex = 1;
+            this.lblDistance.Text = "- m";
             // 
             // grpThermalInfo
             // 
@@ -238,11 +374,10 @@ namespace ThermoViewer
             this.grpThermalInfo.Controls.Add(this.lblRoiMax);
             this.grpThermalInfo.Controls.Add(this.lblRoiAvgTitle);
             this.grpThermalInfo.Controls.Add(this.lblRoiAvg);
-            this.grpThermalInfo.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.grpThermalInfo.Location = new System.Drawing.Point(10, 134);
+            this.grpThermalInfo.Location = new System.Drawing.Point(10, 122);
             this.grpThermalInfo.Name = "grpThermalInfo";
             this.grpThermalInfo.Padding = new System.Windows.Forms.Padding(10);
-            this.grpThermalInfo.Size = new System.Drawing.Size(270, 417);
+            this.grpThermalInfo.Size = new System.Drawing.Size(270, 235);
             this.grpThermalInfo.TabIndex = 0;
             this.grpThermalInfo.TabStop = false;
             this.grpThermalInfo.Text = "Thông số nhiệt độ";
@@ -286,7 +421,7 @@ namespace ThermoViewer
             // lblCursorTempTitle
             // 
             this.lblCursorTempTitle.AutoSize = true;
-            this.lblCursorTempTitle.Location = new System.Drawing.Point(13, 112);
+            this.lblCursorTempTitle.Location = new System.Drawing.Point(13, 84);
             this.lblCursorTempTitle.Name = "lblCursorTempTitle";
             this.lblCursorTempTitle.Size = new System.Drawing.Size(137, 20);
             this.lblCursorTempTitle.TabIndex = 8;
@@ -295,7 +430,7 @@ namespace ThermoViewer
             // lblCursorTemp
             // 
             this.lblCursorTemp.AutoSize = true;
-            this.lblCursorTemp.Location = new System.Drawing.Point(156, 112);
+            this.lblCursorTemp.Location = new System.Drawing.Point(156, 84);
             this.lblCursorTemp.Name = "lblCursorTemp";
             this.lblCursorTemp.Size = new System.Drawing.Size(34, 20);
             this.lblCursorTemp.TabIndex = 9;
@@ -304,7 +439,7 @@ namespace ThermoViewer
             // lblRoiMinTitle
             // 
             this.lblRoiMinTitle.AutoSize = true;
-            this.lblRoiMinTitle.Location = new System.Drawing.Point(13, 142);
+            this.lblRoiMinTitle.Location = new System.Drawing.Point(13, 112);
             this.lblRoiMinTitle.Name = "lblRoiMinTitle";
             this.lblRoiMinTitle.Size = new System.Drawing.Size(71, 20);
             this.lblRoiMinTitle.TabIndex = 10;
@@ -313,7 +448,7 @@ namespace ThermoViewer
             // lblRoiMin
             // 
             this.lblRoiMin.AutoSize = true;
-            this.lblRoiMin.Location = new System.Drawing.Point(130, 142);
+            this.lblRoiMin.Location = new System.Drawing.Point(130, 112);
             this.lblRoiMin.Name = "lblRoiMin";
             this.lblRoiMin.Size = new System.Drawing.Size(34, 20);
             this.lblRoiMin.TabIndex = 11;
@@ -322,7 +457,7 @@ namespace ThermoViewer
             // lblRoiMaxTitle
             // 
             this.lblRoiMaxTitle.AutoSize = true;
-            this.lblRoiMaxTitle.Location = new System.Drawing.Point(13, 166);
+            this.lblRoiMaxTitle.Location = new System.Drawing.Point(13, 136);
             this.lblRoiMaxTitle.Name = "lblRoiMaxTitle";
             this.lblRoiMaxTitle.Size = new System.Drawing.Size(75, 20);
             this.lblRoiMaxTitle.TabIndex = 12;
@@ -331,7 +466,7 @@ namespace ThermoViewer
             // lblRoiMax
             // 
             this.lblRoiMax.AutoSize = true;
-            this.lblRoiMax.Location = new System.Drawing.Point(130, 166);
+            this.lblRoiMax.Location = new System.Drawing.Point(130, 136);
             this.lblRoiMax.Name = "lblRoiMax";
             this.lblRoiMax.Size = new System.Drawing.Size(34, 20);
             this.lblRoiMax.TabIndex = 13;
@@ -340,7 +475,7 @@ namespace ThermoViewer
             // lblRoiAvgTitle
             // 
             this.lblRoiAvgTitle.AutoSize = true;
-            this.lblRoiAvgTitle.Location = new System.Drawing.Point(13, 190);
+            this.lblRoiAvgTitle.Location = new System.Drawing.Point(13, 160);
             this.lblRoiAvgTitle.Name = "lblRoiAvgTitle";
             this.lblRoiAvgTitle.Size = new System.Drawing.Size(73, 20);
             this.lblRoiAvgTitle.TabIndex = 14;
@@ -349,7 +484,7 @@ namespace ThermoViewer
             // lblRoiAvg
             // 
             this.lblRoiAvg.AutoSize = true;
-            this.lblRoiAvg.Location = new System.Drawing.Point(130, 190);
+            this.lblRoiAvg.Location = new System.Drawing.Point(130, 160);
             this.lblRoiAvg.Name = "lblRoiAvg";
             this.lblRoiAvg.Size = new System.Drawing.Size(34, 20);
             this.lblRoiAvg.TabIndex = 15;
@@ -365,7 +500,7 @@ namespace ThermoViewer
             this.grpImageInfo.Location = new System.Drawing.Point(10, 0);
             this.grpImageInfo.Name = "grpImageInfo";
             this.grpImageInfo.Padding = new System.Windows.Forms.Padding(10);
-            this.grpImageInfo.Size = new System.Drawing.Size(270, 134);
+            this.grpImageInfo.Size = new System.Drawing.Size(270, 116);
             this.grpImageInfo.TabIndex = 1;
             this.grpImageInfo.TabStop = false;
             this.grpImageInfo.Text = "Thông tin ảnh";
@@ -441,6 +576,8 @@ namespace ThermoViewer
             this.panelMain.ResumeLayout(false);
             this.panelImage.ResumeLayout(false);
             this.panelRight.ResumeLayout(false);
+            this.grpEnvInfo.ResumeLayout(false);
+            this.grpEnvInfo.PerformLayout();
             this.grpThermalInfo.ResumeLayout(false);
             this.grpThermalInfo.PerformLayout();
             this.grpImageInfo.ResumeLayout(false);

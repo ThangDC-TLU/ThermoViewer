@@ -16,6 +16,9 @@ namespace ThermoViewer
             _getThermalData = getThermalData;
         }
 
+        /// <summary>
+        /// Chuyển tạo độ trong pictureBox sang tạo độ tương ứng trong ma trận nhiệt
+        /// </summary>
         public Point ScreenToImage(Point p)
         {
             var data = _getThermalData();
@@ -43,6 +46,9 @@ namespace ThermoViewer
             return new Point(imgX, imgY);
         }
 
+        /// <summary>
+        /// Chuyển 1 vùng (rectangle) trong ma trận nhiệt thermalData sang vùng tương ứng trên PictureBox để vẽ lên màn hình.
+        /// </summary>
         public Rectangle ImageRectToScreenRect(Rectangle imgRect)
         {
             var data = _getThermalData();
