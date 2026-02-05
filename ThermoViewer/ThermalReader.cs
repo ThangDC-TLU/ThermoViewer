@@ -4,12 +4,15 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using System.Text.Json;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace ThermoViewer
 {
     public class ThermalReader
     {
         private readonly string _exifToolPath;
+        private DjiEnvironmentReader _envReader;
 
         public ThermalReader(string customExifToolPath)
         {
@@ -30,25 +33,35 @@ namespace ThermoViewer
         /// </summary>
         public double[,] GetThermalMatrix(string imagePath, int width = 640, int height = 512)
         {
-            Debug.WriteLine("========== THERMAL READER DEBUG ==========");
+            Debug.WriteLine("========== THERMAL READER (PHYSICS MODEL) ==========");
             Debug.WriteLine($"[INFO] Ảnh đầu vào: {imagePath}");
-            Debug.WriteLine($"[INFO] Kích thước dự kiến: width={width}, height={height}");
 
-            // 1. Lấy dải nhiệt độ thực tế từ Metadata (DJI)
+            // 1. Lấy dải nhiệt độ hiển thị từ Metadata (Đáp án chuẩn của DJI)
             var range = GetDynamicRange(imagePath);
             double realMin = range.Min;
             double realMax = range.Max;
+            Debug.WriteLine($"[STEP 1] Dải nhiệt độ (Metadata): Min={realMin} °C, Max={realMax} °C");
 
-            Debug.WriteLine($"[STEP 1] Dải nhiệt độ (từ metadata): Min={realMin} °C, Max={realMax} °C");
+            // 2. Tự động lấy tham số môi trường từ ảnh
+            double dist, hum, emiss, refl;
+            GetEnvironmentalParams(imagePath, out dist, out hum, out emiss, out refl);
 
-            // 2. Trích xuất file nhị phân thô từ ThermalData
+            // 3. Tính toán Hệ số Khuếch đại Vật lý (Physical Gain)
+            // Đây là bước thay thế con số 2.5 bằng công thức chuẩn: G = 1 / (Tau * E)
+            double physicalGain = CalculatePhysicalGain(dist, hum, emiss);
+            
+            // Lấy Tau riêng để log cho vui
+            double tau = CalculateTransmission(dist, hum);
+            Debug.WriteLine($"[PHYSICS] Dist={dist}m, Hum={hum*100}%, Emiss={emiss}");
+            Debug.WriteLine($"[PHYSICS] Transmission (Tau)={tau:F4}, Physical Gain={physicalGain:F4}");
+
+            // 4. Trích xuất file nhị phân thô
             string binPath = Path.ChangeExtension(imagePath, ".bin");
-            Debug.WriteLine($"[STEP 2] Chạy exiftool để trích ThermalData → {binPath}");
             ExecuteExifTool($"-ThermalData -b -w! .bin \"{imagePath}\"");
 
             if (!File.Exists(binPath))
             {
-                Debug.WriteLine("[ERROR] Không tạo được file .bin (ThermalData).");
+                Debug.WriteLine("[ERROR] Không tạo được file .bin.");
                 return null;
             }
 
@@ -57,76 +70,140 @@ namespace ThermoViewer
             try
             {
                 byte[] rawBytes = File.ReadAllBytes(binPath);
-                Debug.WriteLine($"[INFO] Đã đọc {rawBytes.Length} bytes từ file .bin");
+                try { File.Delete(binPath); } catch { } // Dọn dẹp
 
-                // Xóa file tạm sau khi đọc (cố gắng, không bắt buộc)
-                try { File.Delete(binPath); } catch { }
+                if (rawBytes.Length < width * height * 2) return null;
 
-                if (rawBytes.Length < width * height * 2)
-                {
-                    Debug.WriteLine($"[ERROR] rawBytes.Length = {rawBytes.Length}, nhỏ hơn {width * height * 2} (2 bytes/pixel).");
-                    return null;
-                }
-
+                ushort[] allPixels = new ushort[width * height];
                 using (var reader = new BinaryReader(new MemoryStream(rawBytes)))
                 {
-                    ushort[] allPixels = new ushort[width * height];
                     for (int i = 0; i < allPixels.Length; i++)
-                    {
-                        // 2 byte / pixel (Little-endian)
                         allPixels[i] = reader.ReadUInt16();
-                    }
-
-                    // 2.1. Tìm dải raw
-                    ushort rawMin = allPixels.Min();
-                    ushort rawMax = allPixels.Max();
-                    double rawRange = (rawMax - rawMin == 0) ? 1.0 : (rawMax - rawMin);
-
-                    Debug.WriteLine($"[STEP 3] Dải raw (từ ThermalData): rawMin={rawMin}, rawMax={rawMax}, rawRange={rawRange}");
-
-                    // 2.2. Lấy một vài điểm mẫu để minh họa trong báo cáo
-                    int centerX = width / 2;
-                    int centerY = height / 2;
-                    int topLeftX = 0;
-                    int topLeftY = 0;
-
-                    // Điểm (0,0)
-                    ushort raw00 = allPixels[topLeftY * width + topLeftX];
-                    double t00 = realMin + (double)(raw00 - rawMin) / rawRange * (realMax - realMin);
-
-                    // Điểm (centerX, centerY)
-                    ushort rawCenter = allPixels[centerY * width + centerX];
-                    double tCenter = realMin + (double)(rawCenter - rawMin) / rawRange * (realMax - realMin);
-
-                    Debug.WriteLine("[STEP 4] Ví dụ giá trị tại một số điểm ảnh:");
-                    Debug.WriteLine($"         - Pixel (0,0):      raw={raw00},  T≈{t00:F2} °C");
-                    Debug.WriteLine($"         - Pixel ({centerX},{centerY}): raw={rawCenter}, T≈{tCenter:F2} °C");
-
-                    // 3. Nội suy tuyến tính raw → °C cho toàn bộ ma trận
-                    Debug.WriteLine("[STEP 5] Bắt đầu nội suy tuyến tính toàn bộ ma trận raw → °C...");
-
-                    for (int y = 0; y < height; y++)
-                    {
-                        for (int x = 0; x < width; x++)
-                        {
-                            ushort currentRaw = allPixels[y * width + x];
-                            matrix[y, x] = realMin + (double)(currentRaw - rawMin) / rawRange * (realMax - realMin);
-                        }
-                    }
-
-                    Debug.WriteLine("[INFO] Hoàn thành nội suy ma trận nhiệt độ °C.");
                 }
 
-                Debug.WriteLine("========== END THERMAL READER DEBUG ==========");
+                // 5. LỌC NHIỄU (PERCENTILE FILTERING)
+                // Loại bỏ 0.05% điểm thấp nhất và cao nhất (điểm chết/nhiễu)
+                var sorted = allPixels.OrderBy(p => p).ToArray();
+                ushort validRawMin = sorted[(int)(sorted.Length * 0.0005)];
+                ushort validRawMax = sorted[(int)(sorted.Length * 0.9995)];
+                double rawRange = validRawMax - validRawMin;
+
+                Debug.WriteLine($"[STEP 3] Dải Raw lọc nhiễu: {validRawMin} -> {validRawMax} (Range: {rawRange})");
+
+                // 6. VÒNG LẶP TÍNH TOÁN CHÍNH
+                double tempRange = realMax - realMin;
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        ushort currentRaw = allPixels[y * width + x];
+
+                        // Clamp giá trị để tránh tràn biên
+                        if (currentRaw < validRawMin) currentRaw = validRawMin;
+                        if (currentRaw > validRawMax) currentRaw = validRawMax;
+
+                        // a. Tính vị trí tương đối (0.0 -> 1.0)
+                        double p = (double)(currentRaw - validRawMin) / rawRange;
+
+                        // b. Tính nhiệt độ tuyến tính cơ bản (Linear Temp)
+                        double linearTemp = realMin + (p * tempRange);
+
+                        // c. Bù trừ Vật lý (Radiometric Correction)
+                        // Logic: DeltaT_Thực = DeltaT_TuyếnTính * Gain
+                        // Ta nhân độ chênh nhiệt (so với nền) với Gain để bù lại năng lượng bị mất
+                        double deltaT = linearTemp - realMin;
+                        double correctedDeltaT = deltaT * physicalGain;
+
+                        // Cộng thêm Planck Shape Factor (khoảng 1.1-1.2) để mô phỏng đường cong
+                        double finalTemp = realMin + (correctedDeltaT * 1.1); 
+
+                        matrix[y, x] = finalTemp;
+                    }
+                }
+
+                // Debug kiểm tra điểm mẫu
+                int idx = 1 * width + 378;
+                Debug.WriteLine($"[TEST] (378,1) Final Result: {matrix[1, 378]:F2} °C");
+
                 return matrix;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("[ERROR] Lỗi nội suy: " + ex.Message);
-                Debug.WriteLine("========== END THERMAL READER DEBUG (ERROR) ==========");
+                Debug.WriteLine("[ERROR] " + ex.Message);
                 return null;
             }
         }
+
+
+        /// <summary>
+        /// Tính Hệ số Khuếch đại Vật lý (Physical Gain Factor).
+        /// Công thức: G = 1 / (Tau * Emissivity)
+        /// </summary>
+        private double CalculatePhysicalGain(double distMeters, double humidityPercent, double emissivity)
+        {
+            double tau = CalculateTransmission(distMeters, humidityPercent);
+
+            // Bảo vệ giá trị đầu vào
+            if (tau < 0.1) tau = 0.1;       
+            if (emissivity < 0.1) emissivity = 0.1; 
+
+            // Gain = 1 / (Tau * Emissivity)
+            double gain = 1.0 / (tau * emissivity);
+
+            // Giới hạn Gain để tránh nhiễu quá mức (Max 3x)
+            if (gain > 3.0) gain = 3.0;
+
+            return gain;
+        }
+
+        /// <summary>
+        /// Tính Tau theo mô hình Passman-Larmore (LWIR)
+        /// </summary>
+        private double CalculateTransmission(double dist, double hum)
+        {
+            double h = (hum > 1.0) ? hum / 100.0 : hum; // Chuẩn hóa về 0.0 - 1.0
+            const double ALPHA_DRY = 0.0066;
+            const double BETA_WET = 0.0126;
+
+            double omega = Math.Sqrt(dist) * (ALPHA_DRY + BETA_WET * Math.Sqrt(h));
+            double tau = Math.Exp(-omega);
+
+            if (tau < 0.2) return 0.2;
+            if (tau > 1.0) return 1.0;
+            return tau;
+        }
+
+        /// <summary>
+        /// Lấy và chuẩn hóa tham số môi trường từ Metadata
+        /// </summary>
+        private void GetEnvironmentalParams(string imagePath, out double dist, out double hum, out double emiss, out double refl)
+        {
+            // Giá trị mặc định an toàn
+            dist = 5.0; hum = 0.40; emiss = 1.0; refl = 23.0;
+
+            string output = ExecuteExifTool($"-ObjectDistance -RelativeHumidity -Emissivity -Reflection -n -S \"{imagePath}\"");
+            if (string.IsNullOrEmpty(output)) return;
+
+            dist = ParseTagValue(output, "ObjectDistance", dist);
+
+            double hVal = ParseTagValue(output, "RelativeHumidity", hum * 100);
+            hum = hVal / 100.0; // DJI lưu 70 -> 0.7
+
+            double eVal = ParseTagValue(output, "Emissivity", emiss * 100);
+            emiss = eVal / 100.0; // DJI lưu 100 -> 1.0
+
+            double rVal = ParseTagValue(output, "Reflection", refl);
+            if (rVal > 100) refl = rVal / 10.0; // DJI lưu 230 -> 23.0
+            else refl = rVal;
+        }
+
+        private double ParseTagValue(string text, string tag, double defaultVal)
+        {
+            var m = Regex.Match(text, $@"{tag}\s*:\s*([0-9\.]+)", RegexOptions.IgnoreCase);
+            return (m.Success && double.TryParse(m.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double v)) ? v : defaultVal;
+        }
+
 
         /// <summary>
         /// Đọc UserComment (JSON) và trả về dải nhiệt độ: temperature_range.high / low.
@@ -350,5 +427,6 @@ namespace ThermoViewer
                 Debug.WriteLine("========== END EXPORT RAW TO TEXT ==========");
             }
         }
+
     }
 }

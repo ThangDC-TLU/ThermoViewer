@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Drawing;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace ThermoViewer
@@ -30,6 +32,8 @@ namespace ThermoViewer
         // Helpers
         private ImageCoordinateMapper _mapper;
         private ClusterManager _clusterManager;
+        private DjiEnvironmentReader _envReader;
+
 
         public Form1()
         {
@@ -37,6 +41,7 @@ namespace ThermoViewer
 
             _mapper = new ImageCoordinateMapper(() => pictureBox1, () => thermalData);
             _clusterManager = new ClusterManager(_mapper, () => (double)numClusterThreshold.Value);
+            _envReader = new DjiEnvironmentReader(path => reader.GetFullMetadata(path));
 
             // Mouse events
             pictureBox1.MouseDown += pictureBox1_MouseDown;
@@ -64,6 +69,8 @@ namespace ThermoViewer
                 return;
 
             string filePath = openFileDialog1.FileName;
+            // 1) Xuất ThermalData nguyên thủy ra file .thermal.bin
+            ThermalDataHelper.ExportThermalDataRaw(exifPath, filePath);
 
             try
             {
@@ -104,11 +111,33 @@ namespace ThermoViewer
                 lblRealMin.Text = $"{realMin:F2} °C";
                 lblRealMax.Text = $"{realMax:F2} °C";
 
-                // Reset panel phải
+                // Reset panel phải (nhiệt độ)
                 lblCursorTemp.Text = "- °C";
                 lblRoiMin.Text = "- °C";
                 lblRoiMax.Text = "- °C";
                 lblRoiAvg.Text = "- °C";
+
+                // ====== THÔNG TIN MÔI TRƯỜNG ======
+                try
+                {
+                    var env = _envReader.LoadEnvironmentInfo(filePath);
+                    if (env != null)
+                    {
+                        lblDistance.Text = $"{env.DistanceMeters:F1} m";
+                        lblHumidity.Text = $"{env.HumidityPercent:F0} %";
+                        lblEmissivity.Text = $"{env.Emissivity:F2}";
+                        lblReflectedTemp.Text = $"{env.ReflectedTempCelsius:F1} °C";
+                        lblAmbientTemp.Text = $"{env.AmbientTempCelsius:F1} °C";
+                    }
+                    else
+                    {
+                        ResetEnvLabels();
+                    }
+                }
+                catch
+                {
+                    ResetEnvLabels();
+                }
 
                 lblInfo.Text = thermalData != null
                     ? $"Đã nạp dữ liệu nhiệt độ: {thermalData.GetLength(1)} x {thermalData.GetLength(0)}"
@@ -121,6 +150,8 @@ namespace ThermoViewer
                 lblInfo.Text = "Lỗi khi mở ảnh hoặc đọc dữ liệu nhiệt.";
                 statusLabel.Text = "Lỗi: " + ex.Message;
 
+                ResetEnvLabels();
+
                 MessageBox.Show(
                     "Không thể mở ảnh hoặc đọc dữ liệu nhiệt.\n\nChi tiết: " + ex.Message,
                     "Lỗi",
@@ -128,6 +159,15 @@ namespace ThermoViewer
                     MessageBoxIcon.Error
                 );
             }
+        }
+
+        private void ResetEnvLabels()
+        {
+            lblDistance.Text = "- m";
+            lblHumidity.Text = "- %";
+            lblEmissivity.Text = "- ε";
+            lblReflectedTemp.Text = "- °C";
+            lblAmbientTemp.Text = "- °C";
         }
 
         // ================== ZOOM ==================

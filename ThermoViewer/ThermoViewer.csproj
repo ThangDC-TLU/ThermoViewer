@@ -221,6 +221,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClusterManager.cs" />
+    <Compile Include="DjiEnvironmentReader.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -230,6 +231,7 @@
     <Compile Include="ImageCoordinateMapper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ThermalDataHelper.cs" />
     <Compile Include="ThermalReader.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>

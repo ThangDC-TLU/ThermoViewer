@@ -282,7 +282,7 @@ namespace ThermoViewer
             // lblAmbientTemp
             // 
             this.lblAmbientTemp.AutoSize = true;
-            this.lblAmbientTemp.Location = new System.Drawing.Point(160, 150);
+            this.lblAmbientTemp.Location = new System.Drawing.Point(172, 150);
             this.lblAmbientTemp.Name = "lblAmbientTemp";
             this.lblAmbientTemp.Size = new System.Drawing.Size(34, 20);
             this.lblAmbientTemp.TabIndex = 9;
@@ -300,7 +300,7 @@ namespace ThermoViewer
             // lblReflectedTemp
             // 
             this.lblReflectedTemp.AutoSize = true;
-            this.lblReflectedTemp.Location = new System.Drawing.Point(148, 120);
+            this.lblReflectedTemp.Location = new System.Drawing.Point(154, 120);
             this.lblReflectedTemp.Name = "lblReflectedTemp";
             this.lblReflectedTemp.Size = new System.Drawing.Size(34, 20);
             this.lblReflectedTemp.TabIndex = 7;
